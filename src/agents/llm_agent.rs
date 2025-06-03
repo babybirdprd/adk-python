@@ -4,8 +4,9 @@ use crate::{
     agents::{BaseAgent, InvocationContext},
     error::Result,
     events::Event,
+    models::{create_model, LlmRequest},
     tools::BaseTool,
-    types::{AgentId, Metadata},
+    types::{AgentId, Content, Metadata},
 };
 use async_stream::stream;
 use async_trait::async_trait;
@@ -59,14 +60,107 @@ impl BaseAgent for LlmAgent {
         &self.sub_agents
     }
 
-    async fn run_async(&self, _ctx: InvocationContext) -> Result<EventStream> {
-        // TODO: Implement actual LLM agent execution
-        let events = vec![
-            Event::text_response(&self.name, "Hello from LLM agent!"),
-        ];
+    async fn run_async(&self, ctx: InvocationContext) -> Result<EventStream> {
+        let agent_name = self.name.clone();
+        let model_name = self.model.clone();
+        let instruction = self.instruction.clone();
+        let tools = self.tools.clone();
+
         Ok(Box::pin(stream! {
-            for event in events {
-                yield Ok(event);
+            // Create the LLM model
+            let model = match create_model(&model_name).await {
+                Ok(model) => model,
+                Err(e) => {
+                    yield Err(e);
+                    return;
+                }
+            };
+
+            // Build the conversation history from session
+            let mut conversation_history = Vec::new();
+
+            // Add system instruction if provided
+            if !instruction.is_empty() {
+                conversation_history.push(Content::user_text(format!("System: {}", instruction)));
+            }
+
+            // Add conversation history from session events
+            for event in &ctx.session_service.get_session(&ctx.app_name, &ctx.user_id, &ctx.session_id)
+                .await
+                .unwrap_or_default()
+                .unwrap_or_else(|| crate::sessions::Session::new(ctx.app_name.clone(), ctx.user_id.clone(), ctx.session_id.clone()))
+                .events {
+                if let Some(content) = &event.content {
+                    conversation_history.push(content.clone());
+                }
+            }
+
+            // Create LLM request
+            let mut request = LlmRequest::new(&model_name);
+            for content in conversation_history {
+                request = request.add_content(content);
+            }
+
+            // Add tools if available
+            if !tools.is_empty() {
+                request = request.add_tools(tools.clone());
+            }
+
+            // Generate response
+            match model.generate_content(request.clone()).await {
+                Ok(response) => {
+                    // Handle function calls
+                    if response.has_function_calls() {
+                        for function_call in &response.function_calls {
+                            yield Ok(Event::text_response(&agent_name, &format!("Calling function: {}", function_call.name)));
+
+                            // Execute the function call
+                            if let Some(tool) = request.get_tool(&function_call.name) {
+                                let args: HashMap<String, serde_json::Value> = match serde_json::from_value(function_call.args.clone()) {
+                                    Ok(args) => args,
+                                    Err(e) => {
+                                        yield Ok(Event::text_response(&agent_name, &format!("Error parsing function arguments: {}", e)));
+                                        continue;
+                                    }
+                                };
+
+                                match tool.run_async(args).await {
+                                    Ok(result) => {
+                                        yield Ok(Event::text_response(&agent_name, &format!("Function result: {}", result)));
+
+                                        // Add function result to conversation and continue
+                                        let mut follow_up_request = request.clone();
+                                        follow_up_request = follow_up_request.add_model_message(format!("Function {} returned: {}", function_call.name, result));
+
+                                        match model.generate_content(follow_up_request).await {
+                                            Ok(final_response) => {
+                                                if let Some(text) = final_response.get_text() {
+                                                    yield Ok(Event::text_response(&agent_name, text));
+                                                }
+                                            }
+                                            Err(e) => {
+                                                yield Err(e);
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        yield Ok(Event::text_response(&agent_name, &format!("Function execution error: {}", e)));
+                                    }
+                                }
+                            } else {
+                                yield Ok(Event::text_response(&agent_name, &format!("Unknown function: {}", function_call.name)));
+                            }
+                        }
+                    } else if let Some(text) = response.get_text() {
+                        // Regular text response
+                        yield Ok(Event::text_response(&agent_name, text));
+                    } else {
+                        yield Ok(Event::text_response(&agent_name, "No response generated"));
+                    }
+                }
+                Err(e) => {
+                    yield Err(e);
+                }
             }
         }))
     }
