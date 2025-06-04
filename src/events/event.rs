@@ -87,6 +87,11 @@ impl Event {
             metadata: HashMap::new(),
         }
     }
+
+    /// Get the text content of this event
+    pub fn get_text(&self) -> Option<String> {
+        self.content.as_ref().map(|c| c.get_text())
+    }
 }
 
 /// Builder for creating events
