@@ -13,8 +13,30 @@
 # limitations under the License.
 
 from . import version
-from .agents.llm_agent import Agent
+
+# MIGRATION NOTICE:
+# The Google ADK is transitioning from Python to Rust for better performance,
+# type safety, and modern web server capabilities.
+#
+# Core functionality (agents, models, tools, CLI, web server) has been migrated to Rust.
+# Advanced features (evaluation, code execution, memory services) remain in Python.
+#
+# For new projects, use the Rust implementation:
+#   cargo run -- --help
+#
+# For existing projects using advanced features, continue using Python modules:
+#   - Code execution: google.adk.code_executors
+#   - Evaluation: google.adk.evaluation
+#   - Memory services: google.adk.memory
+#   - Advanced tools: google.adk.tools.*
+#   - Authentication: google.adk.auth
+#
+# See MIGRATION_STATUS.md for detailed migration status.
+
 from .runners import Runner
 
 __version__ = version.__version__
-__all__ = ["Agent", "Runner"]
+__all__ = ["Runner"]
+
+# Legacy imports for backward compatibility (deprecated)
+# Use Rust implementation for new development

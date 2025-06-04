@@ -14,18 +14,23 @@
 
 """Defines the interface to support a model."""
 
-from .base_llm import BaseLlm
-from .google_llm import Gemini
-from .llm_request import LlmRequest
-from .llm_response import LlmResponse
-from .registry import LLMRegistry
+# Core model implementations have been migrated to Rust
+# See: src/models/ for Rust implementations
+# Remaining Python implementations for advanced features:
+
+from .anthropic_llm import AnthropicLlm
+from .lite_llm import LiteLlm
+from .base_llm_connection import BaseLlmConnection
+from .gemini_llm_connection import GeminiLlmConnection
 
 __all__ = [
-    'BaseLlm',
-    'Gemini',
-    'LLMRegistry',
+    'AnthropicLlm',
+    'LiteLlm',
+    'BaseLlmConnection',
+    'GeminiLlmConnection',
 ]
 
-
-for regex in Gemini.supported_models():
-  LLMRegistry.register(Gemini)
+# Migration Note:
+# Basic model types (BaseLlm, GoogleLlm, LlmRequest, LlmResponse, Registry)
+# have been migrated to Rust for better performance and type safety.
+# Use the Rust implementation: `use google_adk::models::*;`

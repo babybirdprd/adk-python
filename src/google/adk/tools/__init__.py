@@ -13,14 +13,15 @@
 # limitations under the License.
 
 
+# Core tool implementations have been migrated to Rust
+# See: src/tools/ for Rust implementations
+# Remaining Python implementations for advanced features:
+
 from ..auth.auth_tool import AuthToolArguments
 from .apihub_tool.apihub_toolset import APIHubToolset
-from .base_tool import BaseTool
 from .example_tool import ExampleTool
 from .exit_loop_tool import exit_loop
-from .function_tool import FunctionTool
 from .get_user_choice_tool import get_user_choice_tool as get_user_choice
-from .google_search_tool import google_search
 from .load_artifacts_tool import load_artifacts_tool as load_artifacts
 from .load_memory_tool import load_memory_tool as load_memory
 from .long_running_tool import LongRunningFunctionTool
@@ -32,12 +33,9 @@ from .vertex_ai_search_tool import VertexAiSearchTool
 __all__ = [
     'APIHubToolset',
     'AuthToolArguments',
-    'BaseTool',
-    'google_search',
     'VertexAiSearchTool',
     'ExampleTool',
     'exit_loop',
-    'FunctionTool',
     'get_user_choice',
     'load_artifacts',
     'load_memory',
@@ -46,3 +44,8 @@ __all__ = [
     'ToolContext',
     'transfer_to_agent',
 ]
+
+# Migration Note:
+# Basic tool types (BaseTool, FunctionTool, google_search)
+# have been migrated to Rust for better performance and type safety.
+# Use the Rust implementation: `use google_adk::tools::*;`
