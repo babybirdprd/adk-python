@@ -368,9 +368,8 @@ impl BaseLlm for GoogleLlm {
     async fn generate_content_stream(
         &self,
         request: LlmRequest,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<LlmResponse>> + Send>>> {
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<LlmResponse>> + Send + 'static>>> {
         // For now, just return the non-streaming response as a single item stream
-        // TODO: Implement actual streaming support
         warn!("Streaming not yet implemented for Google AI, falling back to non-streaming");
         let response = self.generate_content(request).await?;
         Ok(Box::pin(futures::stream::once(async move { Ok(response) })))
