@@ -22,6 +22,38 @@
 
 Agent Development Kit (ADK) is a flexible and modular framework for developing and deploying AI agents. While optimized for Gemini and the Google ecosystem, ADK is model-agnostic, deployment-agnostic, and is built for compatibility with other frameworks. ADK was designed to make agent development feel more like software development, to make it easier for developers to create, deploy, and orchestrate agentic architectures that range from simple tasks to complex workflows.
 
+## 🚀 **Migration to Rust (In Progress)**
+
+**The ADK is transitioning from Python to Rust** for enhanced performance, type safety, and modern capabilities:
+
+### ✅ **Rust Implementation (Recommended for New Projects)**
+- **Core Agents**: BaseAgent, LlmAgent, SequentialAgent, ParallelAgent, LoopAgent
+- **LLM Integration**: Google AI/Gemini API with real streaming support
+- **Tools System**: BaseTool, FunctionTool, GoogleSearch with extensible framework
+- **Web Server**: Complete HTTP API + WebSocket support for real-time communication
+- **CLI**: Full command-line interface with web server capabilities
+- **Production Features**: Middleware, logging, graceful shutdown, monitoring
+
+**Get Started with Rust:**
+```bash
+# Install Rust and run the ADK
+cargo run -- --help
+
+# Start web server with agents
+cargo run -- web --port 8000
+
+# Create and run agents
+cargo run --example llm_integration
+```
+
+### 🐍 **Python Implementation (Legacy + Advanced Features)**
+- **Advanced Tools**: BigQuery, RAG, OpenAPI integration
+- **Code Execution**: Built-in code executors and containers
+- **Evaluation System**: Comprehensive testing and validation
+- **Memory Services**: Advanced memory management
+- **Authentication**: Enterprise auth and security features
+
+**Migration Status**: See [MIGRATION_STATUS.md](MIGRATION_STATUS.md) for detailed information.
 
 ---
 
